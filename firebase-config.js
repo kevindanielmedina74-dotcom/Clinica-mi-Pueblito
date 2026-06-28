@@ -15,51 +15,60 @@ const firebaseConfig = {
 };
 
 let db = null;
-
 try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
 } catch (e) {
-  console.warn('Firebase no configurado. Los datos se guardaran solo en este navegador.');
+  console.warn('Firebase no disponible, usando localStorage');
+}
+
+function localGet() {
+  return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
+}
+function localSet(lista) {
+  localStorage.setItem('clinica-pacientes', JSON.stringify(lista));
 }
 
 window.cargarPacientesFirebase = async function () {
-  if (!db) return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
-  try {
-    const snap = await db.collection('pacientes').orderBy('fecha', 'desc').get();
-    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
-  } catch (e) {
-    console.error('Error Firebase:', e);
-    return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
+  if (db) {
+    try {
+      const snap = await db.collection('pacientes').orderBy('fecha', 'desc').get();
+      const firebaseData = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+      localSet(firebaseData);
+      return firebaseData;
+    } catch (e) {
+      console.warn('Firestore no disponible, usando localStorage');
+    }
   }
+  return localGet();
 };
 
 window.agregarPacienteFirebase = async function (p) {
-  if (!db) {
-    const lista = JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
-    p.id = Date.now();
-    lista.unshift(p);
-    localStorage.setItem('clinica-pacientes', JSON.stringify(lista));
-    return p;
+  p.id = Date.now();
+  const lista = localGet();
+  lista.unshift(p);
+  localSet(lista);
+
+  if (db) {
+    try {
+      await db.collection('pacientes').add(p);
+    } catch (e) {
+      console.warn('Firestore no disponible, dato guardado solo localmente');
+    }
   }
-  try {
-    const ref = await db.collection('pacientes').add(p);
-    return { ...p, id: ref.id };
-  } catch (e) {
-    console.error('Error Firebase:', e);
-    return p;
-  }
+  return p;
 };
 
 window.borrarPacienteFirebase = async function (id) {
-  if (!db) {
-    const lista = JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
-    localStorage.setItem('clinica-pacientes', JSON.stringify(lista.filter(x => x.id !== id)));
-    return;
-  }
-  try {
-    await db.collection('pacientes').doc(id).delete();
-  } catch (e) {
-    console.error('Error Firebase:', e);
+  let lista = localGet().filter(x => x.id !== id);
+  localSet(lista);
+
+  if (db) {
+    try {
+      const snap = await db.collection('pacientes').where('id', '==', id).get();
+      snap.forEach(doc => doc.ref.delete());
+    } catch (e) {
+      console.warn('Firestore no disponible');
+    }
   }
 };
