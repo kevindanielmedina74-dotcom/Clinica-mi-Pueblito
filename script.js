@@ -162,11 +162,11 @@ document.getElementById('modalPaciente')?.addEventListener('click', (e) => {
   if (e.target.id === 'modalPaciente') cerrarModalPaciente();
 });
 
-// ===== PACIENTES: FIREBASE FIRESTORE (nube, todos los dispositivos) =====
+// ===== PACIENTES =====
 let pacientesCache = [];
 
-async function cargarPacientes() {
-  pacientesCache = await window.cargarPacientesFirebase();
+function cargarPacientes() {
+  pacientesCache = window.cargarPacientesFirebase();
   return pacientesCache;
 }
 
@@ -174,15 +174,20 @@ function getPacientes() {
   return pacientesCache;
 }
 
-async function agregarPaciente(paciente) {
-  const guardado = await window.agregarPacienteFirebase(paciente);
-  pacientesCache.unshift(guardado);
+function agregarPaciente(paciente) {
+  paciente.id = Date.now();
+  const arr = JSON.parse(localStorage.getItem('cp') || '[]');
+  arr.unshift(paciente);
+  localStorage.setItem('cp', JSON.stringify(arr));
+  pacientesCache = arr;
+  window.agregarPacienteFirebase(paciente);
   return pacientesCache;
 }
 
-async function borrarPaciente(id) {
-  await window.borrarPacienteFirebase(id);
+function borrarPaciente(id) {
   pacientesCache = pacientesCache.filter(p => p.id !== id);
+  localStorage.setItem('cp', JSON.stringify(pacientesCache));
+  window.borrarPacienteFirebase(id);
   return pacientesCache;
 }
 
@@ -222,7 +227,7 @@ validarCampo('c-mensaje', 'err-c-mensaje', v => v.length >= 10, 'Mínimo 10 cara
 // ===== FORMULARIO PACIENTE: GUARDAR =====
 const formPaciente = document.getElementById('formPaciente');
 if (formPaciente) {
-  formPaciente.addEventListener('submit', async (e) => {
+  formPaciente.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const campos = [
@@ -267,7 +272,7 @@ if (formPaciente) {
       fecha: new Date().toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })
     };
 
-    await agregarPaciente(nuevo);
+    agregarPaciente(nuevo);
     renderTabla(pacientesCache);
     limpiarForm();
     openModal('Registro Exitoso', `El paciente ${nuevo.nombres} ${nuevo.apellidos} fue registrado correctamente.`);
@@ -319,9 +324,9 @@ function verPaciente(id) {
   if (p) abrirModalPaciente(p);
 }
 
-async function eliminarPaciente(id) {
+function eliminarPaciente(id) {
   if (!confirm('¿Seguro que deseas eliminar este paciente?')) return;
-  await borrarPaciente(id);
+  borrarPaciente(id);
   renderTabla(filtrarLista(document.getElementById('buscarPaciente')?.value || '', pacientesCache));
 }
 
@@ -367,10 +372,13 @@ document.getElementById('buscarPaciente')?.addEventListener('keydown', (e) => {
 
 // Cargar tabla al iniciar
 if (document.getElementById('bodyPacientes')) {
-  (async () => {
-    await cargarPacientes();
-    renderTabla(pacientesCache);
-  })();
+  window._onPacientesCargados = function (arr) {
+    pacientesCache = arr;
+    var termino = document.getElementById('buscarPaciente')?.value.trim();
+    renderTabla(termino ? filtrarLista(termino, arr) : arr);
+  };
+  cargarPacientes();
+  renderTabla(pacientesCache);
 }
 
 // ===== FORMULARIO CONTACTO =====

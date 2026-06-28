@@ -23,32 +23,26 @@ try {
 function _get() { return JSON.parse(localStorage.getItem('cp') || '[]'); }
 function _set(d) { localStorage.setItem('cp', JSON.stringify(d)); }
 
-window.cargarPacientesFirebase = async function () {
+window.cargarPacientesFirebase = function () {
+  var local = _get();
   if (_db) {
-    try {
-      const snap = await Promise.race([
-        _db.collection('pacientes').orderBy('fecha', 'desc').get(),
-        new Promise((_, rej) => setTimeout(() => rej('timeout'), 4000))
-      ]);
-      const arr = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    Promise.race([
+      _db.collection('pacientes').orderBy('fecha', 'desc').get(),
+      new Promise(function (_, rej) { setTimeout(function () { rej('timeout'); }, 3000); })
+    ]).then(function (snap) {
+      var arr = snap.docs.map(function (d) { return { ...d.data(), id: d.id }; });
       _set(arr);
-      return arr;
-    } catch (_) {}
+      if (window._onPacientesCargados) window._onPacientesCargados(arr);
+    }).catch(function () {});
   }
-  return _get();
+  return local;
 };
 
 window.agregarPacienteFirebase = function (p) {
-  p.id = Date.now();
-  const arr = _get();
-  arr.unshift(p);
-  _set(arr);
-  if (_db) _db.collection('pacientes').add(p).catch(function () {});
-  return p;
+  if (_db) _db.collection('pacientes').add(Object.assign({}, p)).catch(function () {});
 };
 
 window.borrarPacienteFirebase = function (id) {
-  _set(_get().filter(function (x) { return x.id !== id; }));
   if (_db) {
     _db.collection('pacientes').where('id', '==', id).get()
       .then(function (snap) { snap.forEach(function (d) { d.ref.delete(); }); })
