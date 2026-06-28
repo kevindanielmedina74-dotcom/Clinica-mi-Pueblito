@@ -19,7 +19,11 @@ window.addEventListener('load', () => {
   if (qrImage) {
     const url = window.location.href;
     const encoded = encodeURIComponent(url);
-    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encoded}`;
+    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encoded}&margin=10`;
+    qrImage.onerror = function () {
+      this.src = `https://quickchart.io/qr?size=260&text=${encoded}&margin=1`;
+    };
+    qrImage.alt = 'QR - Clinica Mi Pueblito';
   }
 });
 
@@ -158,20 +162,16 @@ document.getElementById('modalPaciente')?.addEventListener('click', (e) => {
   if (e.target.id === 'modalPaciente') cerrarModalPaciente();
 });
 
-// ===== PACIENTES: API PERSISTENTE (Netlify Blob) =====
+// ===== PACIENTES: LOCALSTORAGE (funciona en GitHub Pages) =====
 let pacientesCache = [];
-let cacheLoaded = false;
 
-async function cargarPacientes() {
+function cargarPacientes() {
   try {
-    const res = await fetch('/api/pacientes');
-    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`); // Fix: verificar respuesta HTTP
-    pacientesCache = await res.json();
+    const data = localStorage.getItem('clinica-pacientes');
+    pacientesCache = data ? JSON.parse(data) : [];
   } catch (e) {
-    console.error('Error al cargar pacientes:', e);
     pacientesCache = [];
   }
-  cacheLoaded = true;
   return pacientesCache;
 }
 
@@ -179,29 +179,19 @@ function getPacientes() {
   return pacientesCache;
 }
 
-async function agregarPaciente(paciente) {
-  try {
-    const res = await fetch('/api/pacientes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(paciente)
-    });
-    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`); // Fix: verificar respuesta
-    pacientesCache = await res.json();
-  } catch (e) {
-    console.error('Error al guardar:', e);
-  }
+function guardarEnLocal() {
+  localStorage.setItem('clinica-pacientes', JSON.stringify(pacientesCache));
+}
+
+function agregarPaciente(paciente) {
+  pacientesCache.push(paciente);
+  guardarEnLocal();
   return pacientesCache;
 }
 
-async function borrarPaciente(id) {
-  try {
-    const res = await fetch(`/api/pacientes?id=${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`); // Fix: verificar respuesta
-    pacientesCache = await res.json();
-  } catch (e) {
-    console.error('Error al eliminar:', e);
-  }
+function borrarPaciente(id) {
+  pacientesCache = pacientesCache.filter(p => p.id !== id);
+  guardarEnLocal();
   return pacientesCache;
 }
 
@@ -241,7 +231,7 @@ validarCampo('c-mensaje', 'err-c-mensaje', v => v.length >= 10, 'Mínimo 10 cara
 // ===== FORMULARIO PACIENTE: GUARDAR =====
 const formPaciente = document.getElementById('formPaciente');
 if (formPaciente) {
-  formPaciente.addEventListener('submit', async (e) => {
+  formPaciente.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const campos = [
@@ -287,7 +277,7 @@ if (formPaciente) {
       fecha: new Date().toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })
     };
 
-    await agregarPaciente(nuevo);
+    agregarPaciente(nuevo);
     renderTabla(pacientesCache);
     limpiarForm();
     openModal('✅ Registro Exitoso', `El paciente ${nuevo.nombres} ${nuevo.apellidos} fue registrado correctamente.`);
@@ -339,9 +329,9 @@ function verPaciente(id) {
   if (p) abrirModalPaciente(p);
 }
 
-async function eliminarPaciente(id) {
+function eliminarPaciente(id) {
   if (!confirm('¿Seguro que deseas eliminar este paciente?')) return;
-  await borrarPaciente(id);
+  borrarPaciente(id);
   renderTabla(filtrarLista(document.getElementById('buscarPaciente')?.value || '', pacientesCache));
 }
 
@@ -385,12 +375,10 @@ document.getElementById('buscarPaciente')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') ejecutarBusqueda();
 });
 
-// Cargar tabla al iniciar (desde API)
+// Cargar tabla al iniciar
 if (document.getElementById('bodyPacientes')) {
-  (async () => {
-    await cargarPacientes();
-    renderTabla(pacientesCache);
-  })();
+  cargarPacientes();
+  renderTabla(pacientesCache);
 }
 
 // ===== FORMULARIO CONTACTO =====
