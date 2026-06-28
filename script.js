@@ -162,16 +162,11 @@ document.getElementById('modalPaciente')?.addEventListener('click', (e) => {
   if (e.target.id === 'modalPaciente') cerrarModalPaciente();
 });
 
-// ===== PACIENTES: LOCALSTORAGE (funciona en GitHub Pages) =====
+// ===== PACIENTES: FIREBASE FIRESTORE (nube, todos los dispositivos) =====
 let pacientesCache = [];
 
-function cargarPacientes() {
-  try {
-    const data = localStorage.getItem('clinica-pacientes');
-    pacientesCache = data ? JSON.parse(data) : [];
-  } catch (e) {
-    pacientesCache = [];
-  }
+async function cargarPacientes() {
+  pacientesCache = await window.cargarPacientesFirebase();
   return pacientesCache;
 }
 
@@ -179,19 +174,15 @@ function getPacientes() {
   return pacientesCache;
 }
 
-function guardarEnLocal() {
-  localStorage.setItem('clinica-pacientes', JSON.stringify(pacientesCache));
-}
-
-function agregarPaciente(paciente) {
-  pacientesCache.push(paciente);
-  guardarEnLocal();
+async function agregarPaciente(paciente) {
+  const guardado = await window.agregarPacienteFirebase(paciente);
+  pacientesCache.unshift(guardado);
   return pacientesCache;
 }
 
-function borrarPaciente(id) {
+async function borrarPaciente(id) {
+  await window.borrarPacienteFirebase(id);
   pacientesCache = pacientesCache.filter(p => p.id !== id);
-  guardarEnLocal();
   return pacientesCache;
 }
 
@@ -231,7 +222,7 @@ validarCampo('c-mensaje', 'err-c-mensaje', v => v.length >= 10, 'Mínimo 10 cara
 // ===== FORMULARIO PACIENTE: GUARDAR =====
 const formPaciente = document.getElementById('formPaciente');
 if (formPaciente) {
-  formPaciente.addEventListener('submit', (e) => {
+  formPaciente.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const campos = [
@@ -263,7 +254,6 @@ if (formPaciente) {
     if (!valid) return;
 
     const nuevo = {
-      id: Date.now(),
       nombres:      document.getElementById('nombres').value.trim(),
       apellidos:    document.getElementById('apellidos').value.trim(),
       cedula:       document.getElementById('cedula').value.trim(),
@@ -277,10 +267,10 @@ if (formPaciente) {
       fecha: new Date().toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })
     };
 
-    agregarPaciente(nuevo);
+    await agregarPaciente(nuevo);
     renderTabla(pacientesCache);
     limpiarForm();
-    openModal('✅ Registro Exitoso', `El paciente ${nuevo.nombres} ${nuevo.apellidos} fue registrado correctamente.`);
+    openModal('Registro Exitoso', `El paciente ${nuevo.nombres} ${nuevo.apellidos} fue registrado correctamente.`);
   });
 }
 
@@ -329,9 +319,9 @@ function verPaciente(id) {
   if (p) abrirModalPaciente(p);
 }
 
-function eliminarPaciente(id) {
+async function eliminarPaciente(id) {
   if (!confirm('¿Seguro que deseas eliminar este paciente?')) return;
-  borrarPaciente(id);
+  await borrarPaciente(id);
   renderTabla(filtrarLista(document.getElementById('buscarPaciente')?.value || '', pacientesCache));
 }
 
@@ -377,8 +367,10 @@ document.getElementById('buscarPaciente')?.addEventListener('keydown', (e) => {
 
 // Cargar tabla al iniciar
 if (document.getElementById('bodyPacientes')) {
-  cargarPacientes();
-  renderTabla(pacientesCache);
+  (async () => {
+    await cargarPacientes();
+    renderTabla(pacientesCache);
+  })();
 }
 
 // ===== FORMULARIO CONTACTO =====
