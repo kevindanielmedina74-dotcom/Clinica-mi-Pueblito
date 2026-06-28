@@ -165,8 +165,19 @@ document.getElementById('modalPaciente')?.addEventListener('click', (e) => {
 // ===== PACIENTES =====
 let pacientesCache = [];
 
+function pacientesLocalGet() {
+  try { return JSON.parse(localStorage.getItem('cp') || '[]'); } catch (_) { return []; }
+}
+function pacientesLocalSet(arr) {
+  try { localStorage.setItem('cp', JSON.stringify(arr)); } catch (_) {}
+}
+
 function cargarPacientes() {
-  pacientesCache = window.cargarPacientesFirebase();
+  pacientesCache = pacientesLocalGet();
+  // Intentar Firebase si existe (no bloquea)
+  if (typeof window.cargarPacientesFirebase === 'function') {
+    window.cargarPacientesFirebase();
+  }
   return pacientesCache;
 }
 
@@ -176,18 +187,22 @@ function getPacientes() {
 
 function agregarPaciente(paciente) {
   paciente.id = Date.now();
-  const arr = JSON.parse(localStorage.getItem('cp') || '[]');
+  var arr = pacientesLocalGet();
   arr.unshift(paciente);
-  localStorage.setItem('cp', JSON.stringify(arr));
+  pacientesLocalSet(arr);
   pacientesCache = arr;
-  window.agregarPacienteFirebase(paciente);
+  if (typeof window.agregarPacienteFirebase === 'function') {
+    window.agregarPacienteFirebase(paciente);
+  }
   return pacientesCache;
 }
 
 function borrarPaciente(id) {
-  pacientesCache = pacientesCache.filter(p => p.id !== id);
-  localStorage.setItem('cp', JSON.stringify(pacientesCache));
-  window.borrarPacienteFirebase(id);
+  pacientesCache = pacientesLocalGet().filter(function (p) { return p.id !== id; });
+  pacientesLocalSet(pacientesCache);
+  if (typeof window.borrarPacienteFirebase === 'function') {
+    window.borrarPacienteFirebase(id);
+  }
   return pacientesCache;
 }
 
