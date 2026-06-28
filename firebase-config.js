@@ -14,61 +14,44 @@ const firebaseConfig = {
   appId: "AQUI_TU_APP_ID"
 };
 
-let db = null;
+let _db = null;
 try {
   firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-} catch (e) {
-  console.warn('Firebase no disponible, usando localStorage');
-}
+  _db = firebase.firestore();
+} catch (_) {}
 
-function localGet() {
-  return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
-}
-function localSet(lista) {
-  localStorage.setItem('clinica-pacientes', JSON.stringify(lista));
-}
+function _get() { return JSON.parse(localStorage.getItem('cp') || '[]'); }
+function _set(d) { localStorage.setItem('cp', JSON.stringify(d)); }
 
 window.cargarPacientesFirebase = async function () {
-  if (db) {
+  if (_db) {
     try {
-      const snap = await db.collection('pacientes').orderBy('fecha', 'desc').get();
-      const firebaseData = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-      localSet(firebaseData);
-      return firebaseData;
-    } catch (e) {
-      console.warn('Firestore no disponible, usando localStorage');
-    }
+      const snap = await Promise.race([
+        _db.collection('pacientes').orderBy('fecha', 'desc').get(),
+        new Promise((_, rej) => setTimeout(() => rej('timeout'), 4000))
+      ]);
+      const arr = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+      _set(arr);
+      return arr;
+    } catch (_) {}
   }
-  return localGet();
+  return _get();
 };
 
-window.agregarPacienteFirebase = async function (p) {
+window.agregarPacienteFirebase = function (p) {
   p.id = Date.now();
-  const lista = localGet();
-  lista.unshift(p);
-  localSet(lista);
-
-  if (db) {
-    try {
-      await db.collection('pacientes').add(p);
-    } catch (e) {
-      console.warn('Firestore no disponible, dato guardado solo localmente');
-    }
-  }
+  const arr = _get();
+  arr.unshift(p);
+  _set(arr);
+  if (_db) _db.collection('pacientes').add(p).catch(function () {});
   return p;
 };
 
-window.borrarPacienteFirebase = async function (id) {
-  let lista = localGet().filter(x => x.id !== id);
-  localSet(lista);
-
-  if (db) {
-    try {
-      const snap = await db.collection('pacientes').where('id', '==', id).get();
-      snap.forEach(doc => doc.ref.delete());
-    } catch (e) {
-      console.warn('Firestore no disponible');
-    }
+window.borrarPacienteFirebase = function (id) {
+  _set(_get().filter(function (x) { return x.id !== id; }));
+  if (_db) {
+    _db.collection('pacientes').where('id', '==', id).get()
+      .then(function (snap) { snap.forEach(function (d) { d.ref.delete(); }); })
+      .catch(function () {});
   }
 };
