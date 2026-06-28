@@ -1,11 +1,9 @@
 // ===== CONFIGURACION DE FIREBASE =====
-// Pega aqui tus credenciales de Firebase.
-// Para obtenerlas:
-//   1. Ve a https://console.firebase.google.com
-//   2. Crea un proyecto (o usa uno existente)
-//   3. Ve a "Project settings" > "General" > "Tus apps"
-//   4. Click en "Web" (icono </>)
-//   5. Copia el objeto "firebaseConfig" y pegalo abajo
+// 1. Ve a https://console.firebase.google.com
+// 2. Crea un proyecto
+// 3. Ve a "Project settings" > "Tus apps" > Web (</>)
+// 4. Copia el objeto firebaseConfig y pegalo abajo
+// 5. En Firestore Database, crea la BD en modo prueba
 
 const firebaseConfig = {
   apiKey: "AQUI_TU_API_KEY",
@@ -16,34 +14,52 @@ const firebaseConfig = {
   appId: "AQUI_TU_APP_ID"
 };
 
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db = null;
 
-async function cargarPacientes() {
-  try {
-    const snapshot = await db.collection('pacientes').orderBy('fecha', 'desc').get();
-    return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-  } catch (e) {
-    console.error('Error al cargar:', e);
-    return [];
-  }
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch (e) {
+  console.warn('Firebase no configurado. Los datos se guardaran solo en este navegador.');
 }
 
-async function agregarPaciente(paciente) {
+window.cargarPacientesFirebase = async function () {
+  if (!db) return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
   try {
-    const docRef = await db.collection('pacientes').add(paciente);
-    return { ...paciente, id: docRef.id };
+    const snap = await db.collection('pacientes').orderBy('fecha', 'desc').get();
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
   } catch (e) {
-    console.error('Error al guardar:', e);
-    return paciente;
+    console.error('Error Firebase:', e);
+    return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
   }
-}
+};
 
-async function borrarPaciente(id) {
+window.agregarPacienteFirebase = async function (p) {
+  if (!db) {
+    const lista = JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
+    p.id = Date.now();
+    lista.unshift(p);
+    localStorage.setItem('clinica-pacientes', JSON.stringify(lista));
+    return p;
+  }
+  try {
+    const ref = await db.collection('pacientes').add(p);
+    return { ...p, id: ref.id };
+  } catch (e) {
+    console.error('Error Firebase:', e);
+    return p;
+  }
+};
+
+window.borrarPacienteFirebase = async function (id) {
+  if (!db) {
+    const lista = JSON.parse(localStorage.getItem('clinica-pacientes') || '[]');
+    localStorage.setItem('clinica-pacientes', JSON.stringify(lista.filter(x => x.id !== id)));
+    return;
+  }
   try {
     await db.collection('pacientes').doc(id).delete();
   } catch (e) {
-    console.error('Error al eliminar:', e);
+    console.error('Error Firebase:', e);
   }
-}
+};
