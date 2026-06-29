@@ -166,10 +166,10 @@ document.getElementById('modalPaciente')?.addEventListener('click', (e) => {
 let pacientesCache = [];
 
 function pacientesLocalGet() {
-  try { return JSON.parse(localStorage.getItem('cp') || '[]'); } catch (_) { return []; }
+  try { return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]'); } catch (_) { return []; }
 }
 function pacientesLocalSet(arr) {
-  try { localStorage.setItem('cp', JSON.stringify(arr)); } catch (_) {}
+  try { localStorage.setItem('clinica-pacientes', JSON.stringify(arr)); } catch (_) {}
 }
 
 function cargarPacientes() {

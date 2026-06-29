@@ -15,8 +15,8 @@ try {
   _db = firebase.firestore();
 } catch (_) {}
 
-function _get() { return JSON.parse(localStorage.getItem('cp') || '[]'); }
-function _set(d) { localStorage.setItem('cp', JSON.stringify(d)); }
+function _get() { return JSON.parse(localStorage.getItem('clinica-pacientes') || '[]'); }
+function _set(d) { localStorage.setItem('clinica-pacientes', JSON.stringify(d)); }
 
 window.cargarPacientesFirebase = function () {
   var local = _get();
