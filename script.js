@@ -291,6 +291,8 @@ if (formPaciente) {
     renderTabla(pacientesCache);
     limpiarForm();
     openModal('Registro Exitoso', `El paciente ${nuevo.nombres} ${nuevo.apellidos} fue registrado correctamente.`);
+    // Auto-descargar Excel actualizado
+    setTimeout(function(){ generarExcel(pacientesLocalGet()); }, 500);
   });
 }
 
@@ -343,6 +345,7 @@ function eliminarPaciente(id) {
   if (!confirm('¿Seguro que deseas eliminar este paciente?')) return;
   borrarPaciente(id);
   renderTabla(filtrarLista(document.getElementById('buscarPaciente')?.value || '', pacientesCache));
+  setTimeout(function(){ generarExcel(pacientesLocalGet()); }, 500);
 }
 
 function filtrarLista(termino, lista) {
@@ -414,31 +417,37 @@ if (document.getElementById('bodyPacientes')) {
   window.addEventListener('resize', checkWidth);
 })();
 
-// ===== EXPORTAR A EXCEL =====
+// ===== EXPORTAR A EXCEL (.xlsx) =====
 function exportarExcel() {
+  if (typeof XLSX === 'undefined') {
+    openModal('Error', 'La librería Excel no ha cargado. Intenta recargar la página.');
+    return;
+  }
   var pacientes = getPacientes();
   if (pacientes.length === 0) {
     openModal('Sin datos', 'No hay pacientes registrados para exportar.');
     return;
   }
-  // Cabeceras
-  var filas = [['#','Nombres','Apellidos','Cédula','Fecha Nac.','Género','Teléfono','Correo','Especialidad','Dirección','Motivo','Fecha Registro']];
+  generarExcel(pacientes);
+}
+
+function generarExcel(pacientes) {
+  if (typeof XLSX === 'undefined') {
+    return;
+  }
+  var data = [['#','Nombres','Apellidos','Cédula','Fecha Nac.','Género','Teléfono','Correo','Especialidad','Dirección','Motivo','Fecha Registro']];
   pacientes.forEach(function(p,i){
-    filas.push([
+    data.push([
       i+1, p.nombres, p.apellidos, p.cedula, p.fechaNac, p.genero,
       p.telefono, p.correo||'', p.especialidad, p.direccion||'', p.motivo, p.fecha
     ]);
   });
-  var csv = filas.map(function(f){ return f.map(function(v){ return '"'+(v+'').replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
-  var bom = '\uFEFF';
-  var blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
-  var link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'Pacientes_ClinicaMiPueblito_'+new Date().toISOString().slice(0,10)+'.csv';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:4},{wch:14},{wch:14},{wch:12},{wch:12},{wch:10},{wch:12},{wch:24},{wch:16},{wch:20},{wch:30},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
+  var nombre = 'Pacientes_ClinicaMiPueblito_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  XLSX.writeFile(wb, nombre);
 }
 
 // ===== FORMULARIO CONTACTO =====
