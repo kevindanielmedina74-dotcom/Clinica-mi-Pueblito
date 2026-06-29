@@ -117,11 +117,14 @@
     <div class="lista-container admin-table">
       <div class="lista-header">
         <h2><i class="fas fa-list"></i> Pacientes Registrados</h2>
-        <div class="buscar-box">
-          <i class="fas fa-search"></i>
-          <input type="text" id="buscarPaciente" placeholder="Buscar por nombre..."/>
-          <button type="button" class="btn-search" onclick="ejecutarBusqueda()"><i class="fas fa-search"></i></button>
-          <button type="button" class="btn-clear" onclick="limpiarBusqueda()"><i class="fas fa-times"></i></button>
+        <div class="lista-actions">
+          <div class="buscar-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="buscarPaciente" placeholder="Buscar por nombre..."/>
+            <button type="button" class="btn-search" onclick="ejecutarBusqueda()"><i class="fas fa-search"></i></button>
+            <button type="button" class="btn-clear" onclick="limpiarBusqueda()"><i class="fas fa-times"></i></button>
+          </div>
+          <button type="button" class="btn-excel" onclick="exportarExcel()"><i class="fas fa-file-excel"></i> Excel</button>
         </div>
       </div>
       <div id="contadorPacientes" class="contador-badge">0 pacientes registrados</div>

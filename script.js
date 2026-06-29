@@ -414,6 +414,33 @@ if (document.getElementById('bodyPacientes')) {
   window.addEventListener('resize', checkWidth);
 })();
 
+// ===== EXPORTAR A EXCEL =====
+function exportarExcel() {
+  var pacientes = getPacientes();
+  if (pacientes.length === 0) {
+    openModal('Sin datos', 'No hay pacientes registrados para exportar.');
+    return;
+  }
+  // Cabeceras
+  var filas = [['#','Nombres','Apellidos','Cédula','Fecha Nac.','Género','Teléfono','Correo','Especialidad','Dirección','Motivo','Fecha Registro']];
+  pacientes.forEach(function(p,i){
+    filas.push([
+      i+1, p.nombres, p.apellidos, p.cedula, p.fechaNac, p.genero,
+      p.telefono, p.correo||'', p.especialidad, p.direccion||'', p.motivo, p.fecha
+    ]);
+  });
+  var csv = filas.map(function(f){ return f.map(function(v){ return '"'+(v+'').replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+  var bom = '\uFEFF';
+  var blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'Pacientes_ClinicaMiPueblito_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
 // ===== FORMULARIO CONTACTO =====
 const formContacto = document.getElementById('formContacto');
 if (formContacto) {
