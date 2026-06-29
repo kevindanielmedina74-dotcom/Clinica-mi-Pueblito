@@ -457,12 +457,12 @@ tbody td { padding: 11px 14px; color: var(--text); vertical-align: middle; }
 
 /* Pantallas muy pequenas (< 480px) */
 @media (max-width: 479px) {
-  html { font-size: 15px; }
+  html { font-size: 16px; }
   .navbar { padding: 0 1rem; height: 60px; }
   .nav-brand { font-size: 1.1rem; }
   .hero { padding: 2rem 1.2rem; min-height: auto; }
-  .hero-content h1 { font-size: 2rem; }
-  .hero-content p { font-size: 1rem; }
+  .hero-content h1 { font-size: 2.2rem; }
+  .hero-content p { font-size: 1.05rem; }
   .hero-image { width: 160px; height: 160px; }
   .hero-card i { font-size: 3.5rem; }
   .hero-logo { width: 80px; }
@@ -470,9 +470,9 @@ tbody td { padding: 11px 14px; color: var(--text); vertical-align: middle; }
   .hero-buttons .btn-primary,
   .hero-buttons .btn-outline { width: 100%; justify-content: center; }
   .page-hero { padding: 3rem 1.2rem; }
-  .page-hero h1 { font-size: 2rem; }
-  .page-hero p { font-size: 1rem; }
-  .section-title { font-size: 1.6rem; }
+  .page-hero h1 { font-size: 2.2rem; }
+  .page-hero p { font-size: 1.05rem; }
+  .section-title { font-size: 1.7rem; }
   .services-preview,
   .services-full,
   .pacientes-section,
@@ -530,7 +530,7 @@ tbody td { padding: 11px 14px; color: var(--text); vertical-align: middle; }
 
 /* Telefonos medianos y tablets pequenas (480px - 767px) */
 @media (min-width: 480px) and (max-width: 767px) {
-  html { font-size: 15px; }
+  html { font-size: 16px; }
   .navbar { padding: 0 1.5rem; }
   .hero { flex-direction: column; text-align: center; padding: 3rem 5%; }
   .hero-image { width: 200px; height: 200px; }

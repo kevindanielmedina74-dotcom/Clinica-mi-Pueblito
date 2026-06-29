@@ -396,6 +396,24 @@ if (document.getElementById('bodyPacientes')) {
   renderTabla(pacientesCache);
 }
 
+// ===== ADMIN: OCULTAR TABLA EN MÓVIL =====
+(function () {
+  var tabla = document.querySelector('.admin-table');
+  var msg = document.querySelector('.admin-msg');
+  function checkWidth() {
+    if (!tabla || !msg) return;
+    if (window.innerWidth < 1024) {
+      tabla.style.display = 'none';
+      msg.style.display = 'block';
+    } else {
+      tabla.style.display = '';
+      msg.style.display = 'none';
+    }
+  }
+  checkWidth();
+  window.addEventListener('resize', checkWidth);
+})();
+
 // ===== FORMULARIO CONTACTO =====
 const formContacto = document.getElementById('formContacto');
 if (formContacto) {
