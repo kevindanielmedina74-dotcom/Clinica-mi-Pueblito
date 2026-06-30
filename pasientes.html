@@ -117,14 +117,11 @@
     <div class="lista-container admin-table">
       <div class="lista-header">
         <h2><i class="fas fa-list"></i> Pacientes Registrados</h2>
-        <div class="lista-actions">
-          <div class="buscar-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="buscarPaciente" placeholder="Buscar por nombre..."/>
-            <button type="button" class="btn-search" onclick="ejecutarBusqueda()"><i class="fas fa-search"></i></button>
-            <button type="button" class="btn-clear" onclick="limpiarBusqueda()"><i class="fas fa-times"></i></button>
-          </div>
-          <button type="button" class="btn-excel" onclick="exportarExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+        <div class="buscar-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="buscarPaciente" placeholder="Buscar por nombre..."/>
+          <button type="button" class="btn-search" onclick="ejecutarBusqueda()"><i class="fas fa-search"></i></button>
+          <button type="button" class="btn-clear" onclick="limpiarBusqueda()"><i class="fas fa-times"></i></button>
         </div>
       </div>
       <div id="contadorPacientes" class="contador-badge">0 pacientes registrados</div>
@@ -188,9 +185,6 @@
     </div>
     <div class="footer-bottom">© 2024 Clínica Mi Pueblito. Todos los derechos reservados.</div>
   </footer>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="script.js"></script>
 </body>

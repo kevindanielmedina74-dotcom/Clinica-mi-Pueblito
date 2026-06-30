@@ -235,8 +235,9 @@ validarCampo('motivo',    'err-motivo',    v => v.trim().length > 0, 'Este campo
 
 // Validaciones formulario contacto
 validarCampo('c-nombre',  'err-c-nombre',  v => v.length >= 2,  'Mínimo 2 caracteres.');
-validarCampo('c-asunto',  'err-c-asunto',  v => v.trim() !== '', 'Este campo es requerido.');
-validarCampo('c-mensaje', 'err-c-mensaje', v => v.trim() !== '', 'Este campo es requerido.');
+validarCampo('c-correo',  'err-c-correo',  v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'Correo inválido.');
+validarCampo('c-asunto',  'err-c-asunto',  v => v.length >= 3,  'Mínimo 3 caracteres.');
+validarCampo('c-mensaje', 'err-c-mensaje', v => v.length >= 10, 'Mínimo 10 caracteres.');
 
 // ===== FORMULARIO PACIENTE: GUARDAR =====
 const formPaciente = document.getElementById('formPaciente');
@@ -290,8 +291,6 @@ if (formPaciente) {
     renderTabla(pacientesCache);
     limpiarForm();
     openModal('Registro Exitoso', `El paciente ${nuevo.nombres} ${nuevo.apellidos} fue registrado correctamente.`);
-    // Auto-descargar Excel actualizado
-    setTimeout(function(){ generarExcel(pacientesLocalGet()); }, 500);
   });
 }
 
@@ -344,7 +343,6 @@ function eliminarPaciente(id) {
   if (!confirm('¿Seguro que deseas eliminar este paciente?')) return;
   borrarPaciente(id);
   renderTabla(filtrarLista(document.getElementById('buscarPaciente')?.value || '', pacientesCache));
-  setTimeout(function(){ generarExcel(pacientesLocalGet()); }, 500);
 }
 
 function filtrarLista(termino, lista) {
@@ -416,39 +414,6 @@ if (document.getElementById('bodyPacientes')) {
   window.addEventListener('resize', checkWidth);
 })();
 
-// ===== EXPORTAR A EXCEL (.xlsx) =====
-function exportarExcel() {
-  if (typeof XLSX === 'undefined') {
-    openModal('Error', 'La librería Excel no ha cargado. Intenta recargar la página.');
-    return;
-  }
-  var pacientes = getPacientes();
-  if (pacientes.length === 0) {
-    openModal('Sin datos', 'No hay pacientes registrados para exportar.');
-    return;
-  }
-  generarExcel(pacientes);
-}
-
-function generarExcel(pacientes) {
-  if (typeof XLSX === 'undefined') {
-    return;
-  }
-  var data = [['#','Nombres','Apellidos','Cédula','Fecha Nac.','Género','Teléfono','Correo','Especialidad','Dirección','Motivo','Fecha Registro']];
-  pacientes.forEach(function(p,i){
-    data.push([
-      i+1, p.nombres, p.apellidos, p.cedula, p.fechaNac, p.genero,
-      p.telefono, p.correo||'', p.especialidad, p.direccion||'', p.motivo, p.fecha
-    ]);
-  });
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{wch:4},{wch:14},{wch:14},{wch:12},{wch:12},{wch:10},{wch:12},{wch:24},{wch:16},{wch:20},{wch:30},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
-  var nombre = 'Pacientes_ClinicaMiPueblito_'+new Date().toISOString().slice(0,10)+'.xlsx';
-  XLSX.writeFile(wb, nombre);
-}
-
 // ===== FORMULARIO CONTACTO =====
 const formContacto = document.getElementById('formContacto');
 if (formContacto) {
@@ -456,8 +421,9 @@ if (formContacto) {
     e.preventDefault();
     const campos = [
       { id: 'c-nombre',  err: 'err-c-nombre',  regla: v => v.length >= 2,  msg: 'Mínimo 2 caracteres.' },
-      { id: 'c-asunto',  err: 'err-c-asunto',  regla: v => v.trim() !== '', msg: 'Este campo es requerido.' },
-      { id: 'c-mensaje', err: 'err-c-mensaje', regla: v => v.trim() !== '', msg: 'Este campo es requerido.' },
+      { id: 'c-correo',  err: 'err-c-correo',  regla: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), msg: 'Correo inválido.' },
+      { id: 'c-asunto',  err: 'err-c-asunto',  regla: v => v.length >= 3,  msg: 'Mínimo 3 caracteres.' },
+      { id: 'c-mensaje', err: 'err-c-mensaje', regla: v => v.length >= 10, msg: 'Mínimo 10 caracteres.' },
     ];
     let valid = true;
     campos.forEach(c => {
@@ -476,11 +442,12 @@ if (formContacto) {
     if (!valid) return;
 
     const nombre  = document.getElementById('c-nombre')?.value.trim()  || '';
+    const correo  = document.getElementById('c-correo')?.value.trim()  || '';
     const asunto  = document.getElementById('c-asunto')?.value.trim()  || '';
     const mensaje = document.getElementById('c-mensaje')?.value.trim() || '';
 
-    const texto = `Hola, Clínica Mi Pueblito.%0A%0ANombre: ${encodeURIComponent(nombre)}%0AAsunto: ${encodeURIComponent(asunto)}%0AMensaje: ${encodeURIComponent(mensaje)}`;
-    const whatsappUrl = `https://wa.me/50298022307?text=${texto}`;
+    const texto = `Hola, Clínica Mi Pueblito.%0A%0ANombre: ${encodeURIComponent(nombre)}%0ACorreo: ${encodeURIComponent(correo)}%0AAsunto: ${encodeURIComponent(asunto)}%0AMensaje: ${encodeURIComponent(mensaje)}`;
+    const whatsappUrl = `https://wa.me/50289741725?text=${texto}`;
 
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     openModal('✅ Mensaje Enviado', 'Se abrió WhatsApp con tu mensaje listo para enviarlo.');
